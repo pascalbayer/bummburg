@@ -146,6 +146,20 @@ Ballerburg was an Atari ST classic. Bummburg is an original game written from
 scratch that shares its premise — two castles, one hill, a great deal of gunpowder
 — and none of its code, artwork or assets.
 
+## Deploying
+
+`.github/workflows/pages.yml` publishes the game to GitHub Pages on every push
+to `main`: it runs the tests, stages `index.html`, `styles/` and `src/`, and
+uploads them. Nothing is compiled, because there is nothing to compile.
+
+Enable it once under **Settings → Pages → Build and deployment → Source: GitHub
+Actions** (the workflow tries to switch this on itself, which works when Actions
+is allowed to write to Pages in the repository). Every path in the game is
+relative, so it runs happily from a project subpath such as
+`https://<user>.github.io/bummburg/`.
+
+Any other static host works the same way — copy those three items and serve them.
+
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
