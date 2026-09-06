@@ -1,0 +1,13 @@
+{
+  "name": "bummburg",
+  "version": "1.0.0",
+  "description": "A WebGL artillery duel between two medieval castles — mobile first, touch and mouse.",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes serve .",
+    "serve": "python3 -m http.server 8000"
+  },
+  "keywords": ["webgl", "game", "artillery", "canvas", "mobile"]
+}
