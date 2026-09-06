@@ -8,6 +8,8 @@ enemy keep until one throne room is rubble.
 Built mobile first — one finger aims, two fingers pan and zoom — and it plays
 just as well with a mouse and keyboard.
 
+**[Play it →](https://pascalbayer.github.io/bummburg/)**
+
 Everything you see is generated at runtime: the terrain, both castles, all the
 artwork and every sound effect. There are no image or audio files, no build step
 and no dependencies.
@@ -152,11 +154,12 @@ scratch that shares its premise — two castles, one hill, a great deal of gunpo
 to `main`: it runs the tests, stages `index.html`, `styles/` and `src/`, and
 uploads them. Nothing is compiled, because there is nothing to compile.
 
-Enable it once under **Settings → Pages → Build and deployment → Source: GitHub
-Actions** (the workflow tries to switch this on itself, which works when Actions
-is allowed to write to Pages in the repository). Every path in the game is
-relative, so it runs happily from a project subpath such as
-`https://<user>.github.io/bummburg/`.
+It is live at <https://pascalbayer.github.io/bummburg/>. Pages was switched on by
+the `configure-pages` step itself; if you fork this, that step will do the same
+for you as long as Actions is allowed to write to Pages, and otherwise you set it
+under **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+
+Every path in the game is relative, so it runs happily from a project subpath.
 
 Any other static host works the same way — copy those three items and serve them.
 
