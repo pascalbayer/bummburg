@@ -20,6 +20,10 @@ export class Particles {
     this.flags = new Uint8Array(max);        // 1 = collides with ground
     this.spriteNames = ['soft', 'spark', 'rubble', 'ring', 'dot', 'ball', 'grass'];
     this.spriteRefs = this.spriteNames.map((n) => sprites[n]);
+    // hoisted so the hot removal path allocates nothing
+    this._floatArrays = [this.x, this.y, this.vx, this.vy, this.life, this.maxLife,
+      this.size, this.sizeEnd, this.rot, this.vrot, this.r, this.g, this.b, this.a,
+      this.drag, this.grav];
   }
 
   clear() { this.n = 0; }
@@ -78,9 +82,8 @@ export class Particles {
   _swapRemove(i) {
     const last = --this.n;
     if (i === last) return;
-    for (const arr of [this.x, this.y, this.vx, this.vy, this.life, this.maxLife,
-      this.size, this.sizeEnd, this.rot, this.vrot, this.r, this.g, this.b, this.a,
-      this.drag, this.grav]) arr[i] = arr[last];
+    const arrays = this._floatArrays;
+    for (let k = 0; k < arrays.length; k++) arrays[k][i] = arrays[k][last];
     this.blend[i] = this.blend[last];
     this.spr[i] = this.spr[last];
     this.flags[i] = this.flags[last];

@@ -7,7 +7,8 @@
   "private": true,
   "scripts": {
     "start": "npx --yes serve .",
-    "serve": "python3 -m http.server 8000"
+    "serve": "python3 -m http.server 8000",
+    "test": "node --test tests/*.test.mjs"
   },
   "keywords": ["webgl", "game", "artillery", "canvas", "mobile"]
 }

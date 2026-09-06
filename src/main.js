@@ -114,6 +114,8 @@ function boot() {
   /* ── match lifecycle ───────────────────────────────────────────── */
 
   function newGame(options, demo) {
+    clearTimeout(app.demoRestart);
+    app.demoRestart = null;
     const g = new Game({ ...options, seed: (Math.random() * 0xffffffff) >>> 0 });
     g.setup(atlas.sprites);
     scene.setup(g, makeRng(g.seed ^ 0x9e3779b9));
@@ -166,6 +168,7 @@ function boot() {
       app.whistle = sfx.whistle();
       hud.updateStats(g.snapshot());
       hud.setHint('');
+      hud.setStatus('');
     });
     g.on('impact', ({ kind, scale }) => {
       app.whistle?.stop();
@@ -188,6 +191,7 @@ function boot() {
       const won = human === null ? null : result.winner === human;
       sfx.fanfare(won !== false);
       hud.setHint('');
+      hud.setStatus('');
       setTimeout(() => screens.showGameOver(result, g.players.map((p) => p.name), won), 1500);
     });
     hud.updateRound(g.round, g.wind);
@@ -212,12 +216,20 @@ function boot() {
   function refreshAim() {
     const g = app.game;
     if (!g || app.demo || !g.castles) return;
-    hud.updateAim(g.aimState, humanTurn() ? g.canFire() : { ok: false, reason: '' }, g.phase);
+    const yours = humanTurn();
+    hud.updateAim(g.aimState, yours ? g.canFire() : { ok: false, reason: '' }, g.phase, yours);
   }
 
   function updateHint() {
-    if (!humanTurn()) return;
     const g = app.game;
+    if (!g || app.demo) return;
+    if (!humanTurn()) {
+      hud.setHint('');
+      hud.setStatus(g.phase === 'aim' && g.players[g.activePlayer].isAI
+        ? `${g.players[g.activePlayer].name} is ranging in` : '');
+      return;
+    }
+    hud.setStatus('');
     const cost = ECONOMY.powderPerShot(g.aimState.power);
     const shots = g.shotsLeft > 1 ? ` · ${g.shotsLeft} shots left this turn` : '';
     hud.setHint(app.hintShown
@@ -251,7 +263,8 @@ function boot() {
     onFire: () => {
       if (!humanTurn()) return;
       sfx.unlock();
-      app.game.fire();
+      if (hud.endTurnMode) app.game.endTurn(true);
+      else app.game.fire();
     },
     onShop: () => { sfx.unlock(); openShop(); },
     onCycleCannon: () => { if (humanTurn()) { app.game.cycleCannon(); sfx.click(true); } },
@@ -292,7 +305,7 @@ function boot() {
       input.enabled = name === null;
       if (name === 'title') {
         hud.show(false);
-        newGame({ mode: 'ai', difficulty: 'normal', assist: 'off' }, true);
+        newGame({ mode: 'demo', assist: 'off' }, true);
       }
     },
   });
@@ -426,8 +439,18 @@ function boot() {
     const g = app.game;
     if (!g) return;
 
-    if (!app.demo || g.phase !== 'over') g.update(app.demo ? dt * 0.35 : dt);
-    if (app.whistle && g.ball) {
+    // the quartermaster and the pause panel really do stop the clock
+    const frozen = !app.demo && screens.blocksPlay;
+    if (!frozen && (!app.demo || g.phase !== 'over')) g.update(app.demo ? dt * 0.8 : dt);
+    if (app.demo && g.phase === 'over' && !app.demoRestart) {
+      app.demoRestart = setTimeout(() => {
+        app.demoRestart = null;
+        if (app.demo) newGame({ mode: 'demo', assist: 'off' }, true);
+      }, 3200);
+    }
+    app.whistleTick = (app.whistleTick || 0) + dt;
+    if (app.whistle && g.ball && app.whistleTick > 0.06) {
+      app.whistleTick = 0;
       app.whistle.update(clamp(1 - (g.ball.y - g.terrain.heightAt(g.ball.x)) / 900, 0, 1));
     }
     frameCamera(dt);
@@ -435,12 +458,13 @@ function boot() {
     scene.draw(g, camera, dt);
   }
 
-  // A quiet battle plays behind the title screen.
-  newGame({ mode: 'ai', difficulty: 'normal', assist: 'off' }, true);
+  // A real battle plays out behind the title screen.
+  newGame({ mode: 'demo', assist: 'off' }, true);
   camera.snap();
   requestAnimationFrame(frame);
   app.camera = camera;
   app.ctx = ctx;
+  app.scene = scene;
   window.__bummburg = app;
 }
 

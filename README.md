@@ -27,6 +27,15 @@ S3, a folder on a web server.
 
 Requires a browser with **WebGL 2** — Chrome, Edge, Firefox, or Safari 15+.
 
+There is a small test suite for the rules and the geometry — castles that stand
+up on their own, guns that can fire over their own walls, the aim preview
+agreeing with the shot, matches that always reach an ending. It needs nothing
+but Node:
+
+```sh
+npm test
+```
+
 ## Playing
 
 **Aim** by dragging anywhere on the battlefield and pulling back like a bow; the
@@ -99,6 +108,7 @@ src/
     effects.js        particle recipes for explosions, debris and smoke
   audio/sfx.js        procedural WebAudio sound
   ui/                 pointer/keyboard input, HUD binding, panels
+tests/game.test.mjs   rules and geometry checks, no browser needed
 ```
 
 A few things worth knowing if you want to poke at it:

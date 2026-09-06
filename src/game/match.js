@@ -49,18 +49,23 @@ export class Game extends Emitter {
     this.castles = [new Castle(0, this.rng, this.terrain), new Castle(1, this.rng, this.terrain)];
     this.palette = this.rng.pick(SKY_PALETTES);
     this.particles = new Particles(sprites);
+    const demo = this.mode === 'demo';
     this.players = [
-      makePlayer(0, 'Player 1', false),
-      makePlayer(1, this.mode === 'ai' ? 'Computer' : 'Player 2', this.mode === 'ai'),
+      makePlayer(0, demo ? 'Blue' : 'Player 1', demo),
+      makePlayer(1, this.mode === 'ai' || demo ? 'Computer' : 'Player 2', this.mode !== 'hotseat'),
     ];
     for (const castle of this.castles) {
       castle.addCannon();
       castle.addCannon();
       for (const c of castle.cannons) { c.power = 58; c.angle = 45; }
     }
-    this.ai = this.mode === 'ai' ? new AI(this, 1, this.difficulty) : null;
+    // A demo match drives both sides, so the title screen shows a real battle.
+    this.ais = [
+      demo ? new AI(this, 0, 'normal') : null,
+      this.mode === 'hotseat' ? null : new AI(this, 1, demo ? 'normal' : this.difficulty),
+    ];
     // Two players toss for the first shot; against the computer the human opens.
-    this.firstPlayer = this.mode === 'hotseat' && this.rng.chance(0.5) ? 1 : 0;
+    this.firstPlayer = this.mode !== 'ai' && this.rng.chance(0.5) ? 1 : 0;
     // whoever shoots second is paid a purse to offset the opening advantage
     this.players[1 - this.firstPlayer].gold += SECOND_MOVER_PURSE;
     this.turnIndex = 0;
@@ -116,7 +121,7 @@ export class Game extends Emitter {
     this.selectCannon(castle.liveCannons.find((c) => !c.firedThisTurn) || null);
     this.emit('turn', { player: this.activePlayer, round: this.round, shots: this.shotsLeft });
     this._checkStalled();
-    if (p.isAI && this.phase === 'aim') this.ai.beginTurn();
+    if (p.isAI && this.phase === 'aim') this.ais[this.activePlayer]?.beginTurn();
   }
 
   _beginRound() {
@@ -483,7 +488,7 @@ export class Game extends Emitter {
       }
     }
 
-    if (this.ai && this.phase !== 'over') this.ai.update(dt);
+    if (this.phase !== 'over') for (const ai of this.ais) ai?.update(dt);
   }
 
   /** Finish the current shot: either hand the same player another gun, or pass. */
@@ -499,7 +504,7 @@ export class Game extends Emitter {
       this.emit('turn', {
         player: this.activePlayer, round: this.round, shots: this.shotsLeft, continued: true,
       });
-      if (p.isAI) this.ai.beginTurn();
+      if (p.isAI) this.ais[this.activePlayer]?.beginTurn();
       return;
     }
     this.turnIndex++;

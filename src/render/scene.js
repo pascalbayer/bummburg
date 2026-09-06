@@ -250,13 +250,17 @@ export class Scene {
     const bounds = castle.bounds;
     if (bounds.x1 < view.x0 || bounds.x0 > view.x1) return;
 
+    // cell centres without allocating a point per block, per frame
+    const mirrored = castle.side !== 0;
+    const cellX = (gx) => castle.originX + ((mirrored ? castle.cols - 1 - gx : gx) + 0.5) * cell;
+    const cellY = (gy) => castle.baseY + (gy + 0.5) * cell;
+
     // dark interior behind the masonry: rooms read as rooms, breaches as holes
     const dark = [0.085 + amb[0] * 0.05, 0.072 + amb[1] * 0.05, 0.070 + amb[2] * 0.06];
     for (let gy = 0; gy < castle.rows; gy++) {
       for (let gx = 0; gx < castle.cols; gx++) {
         if (!castle.interior[castle.idx(gx, gy)]) continue;
-        const p = castle.cellWorld(gx, gy);
-        b.draw(S.white, p.x, p.y, cell + 1.2, cell + 1.2, 0, dark[0], dark[1], dark[2], 1);
+        b.draw(S.white, cellX(gx), cellY(gy), cell + 1.2, cell + 1.2, 0, dark[0], dark[1], dark[2], 1);
       }
     }
 
@@ -265,7 +269,8 @@ export class Scene {
         const i = castle.idx(gx, gy);
         const mat = castle.grid[i];
         if (mat === MAT.EMPTY) continue;
-        const p = castle.cellWorld(gx, gy);
+        const px = cellX(gx);
+        const py = cellY(gy);
         const info = MAT_INFO[mat];
 
         // cheap ambient occlusion: enclosed blocks sit in shade
@@ -283,22 +288,22 @@ export class Scene {
         const g = light[1] * tone * info.tint[1] * scorch + amb[1] * 0.14;
         const bl = light[2] * tone * info.tint[2] * scorch + amb[2] * 0.14;
 
+        const flip = mirrored ? -1 : 1;
         if (mat === MAT.POWDER) {
-          b.draw(S.stoneC, p.x, p.y, cell + 0.6, cell + 0.6, 0, r * 0.7, g * 0.68, bl * 0.66, 1);
-          b.draw(S.barrel, p.x, p.y, cell * 0.82, cell * 0.94, 0, r, g * 0.95, bl * 0.9, 1);
+          b.draw(S.stoneC, px, py, cell + 0.6, cell + 0.6, 0, r * 0.7, g * 0.68, bl * 0.66, 1);
+          b.draw(S.barrel, px, py, cell * 0.82, cell * 0.94, 0, r, g * 0.95, bl * 0.9, 1);
         } else if (mat === MAT.GATE && castle.gateRect) {
           // one gate spread across its cells rather than a door in every block
-          b.draw(gateSlice(S.gate, castle.gateRect, gx, gy), p.x, p.y,
-            (cell + 0.6) * (castle.side === 0 ? 1 : -1), cell + 0.6, 0, r, g, bl, 1);
+          b.draw(gateSlice(S.gate, castle.gateRect, gx, gy), px, py,
+            (cell + 0.6) * flip, cell + 0.6, 0, r, g, bl, 1);
         } else {
           const name = info.sprite[castle.variant[i] % info.sprite.length];
-          const flip = castle.side === 0 ? 1 : -1;
-          b.draw(S[name], p.x, p.y, (cell + 0.6) * flip, cell + 0.6, 0, r, g, bl, 1);
+          b.draw(S[name], px, py, (cell + 0.6) * flip, cell + 0.6, 0, r, g, bl, 1);
         }
 
         if (hpFrac < 0.86) {
           const stage = hpFrac < 0.35 ? 'crack3' : hpFrac < 0.62 ? 'crack2' : 'crack1';
-          b.draw(S[stage], p.x, p.y, cell + 0.6, cell + 0.6, 0, 1, 1, 1, 1 - hpFrac * 0.55);
+          b.draw(S[stage], px, py, cell + 0.6, cell + 0.6, 0, 1, 1, 1, 1 - hpFrac * 0.55);
         }
       }
     }

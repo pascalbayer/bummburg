@@ -70,6 +70,9 @@ export class Screens {
 
   get isOpen() { return this.current !== null; }
 
+  /** Panels that should freeze the match while they are up. */
+  get blocksPlay() { return ['menu', 'help', 'shop'].includes(this.current); }
+
   /* ── shop ────────────────────────────────────────────────────────── */
 
   renderShop(items, gold) {

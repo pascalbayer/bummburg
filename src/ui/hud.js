@@ -25,6 +25,7 @@ export class Hud {
     this.btnMenu = $('#btn-menu');
     this.toastStack = $('#toast-stack');
     this.banner = $('#turn-banner');
+    this.statusLine = $('#status-line');
     this.prev = [{}, {}];
     this._wire();
   }
@@ -99,22 +100,37 @@ export class Hud {
     this.windArrow.style.opacity = strength < 0.07 ? 0.35 : String(0.55 + strength * 0.45);
   }
 
-  updateAim(aim, canFire, phase) {
+  /**
+   * @param {boolean} yours false while the computer is taking its turn — the
+   * dock slides away rather than showing the opponent's firing solution.
+   */
+  updateAim(aim, canFire, phase, yours) {
     if (Math.abs(Number(this.rngAngle.value) - aim.angle) > 0.05) this.rngAngle.value = aim.angle;
     if (Math.abs(Number(this.rngPower.value) - aim.power) > 0.05) this.rngPower.value = aim.power;
     this.outAngle.textContent = `${aim.angle.toFixed(0)}°`;
     this.outPower.textContent = aim.power.toFixed(0);
-    this.btnFire.disabled = !canFire.ok;
-    this.btnFire.textContent = canFire.ok ? 'FIRE' : (canFire.reason || 'FIRE').toUpperCase();
+    // when there is nothing to shoot with, the button becomes the way out
+    this.endTurnMode = !canFire.ok && (canFire.code === 'nocannon' || canFire.code === 'nopowder');
+    this.btnFire.disabled = !canFire.ok && !this.endTurnMode;
+    this.btnFire.textContent = canFire.ok ? 'FIRE'
+      : this.endTurnMode ? 'END TURN' : (canFire.reason || 'FIRE').toUpperCase();
+    this.btnShop.disabled = !yours;
     const many = aim.cannonCount > 1;
-    this.btnCannon.hidden = !many;
+    this.btnCannon.hidden = !many || !yours;
     if (many) this.cannonLabel.textContent = `${aim.cannonIndex}/${aim.cannonCount}`;
-    this.dock.classList.toggle('hidden', phase !== 'aim');
+    this.dock.classList.toggle('hidden', phase !== 'aim' || !yours);
   }
 
   setHint(text) {
     this.dockHint.textContent = text || '';
     this.dockHint.hidden = !text;
+  }
+
+  /** Shown while the other side is thinking, so the game never looks stuck. */
+  setStatus(text) {
+    if (!this.statusLine) return;
+    this.statusLine.textContent = text || '';
+    this.statusLine.hidden = !text;
   }
 
   toast(text, kind = 'normal') {
